@@ -2,6 +2,7 @@ package components
 
 import "fmt"
 
+// POC relayer implementation.
 type SourceRelayer struct {
 	SourceChain      *Chain
 	IntermediateNode *IntermediateNode

@@ -40,44 +40,44 @@ func (i *IntermediateNode) GenerateDepositAddress(destination string) string {
 	// This is the address that users can deposit to.
 	//
 	// Public / private key pairs are also generated here, omitted for brevity.
-	depositAddress := RandString(16)
+	depositAddress := RandString(8)
 	i.DespositToDestination[depositAddress] = destination
 	i.DesinationToDeposit[destination] = depositAddress
 	fmt.Printf("Generated deposit address: %s for destination address: %s\n", depositAddress, destination)
 	return depositAddress
 }
 
-func (i *IntermediateNode) ConfirmDepositOnSource(txn types.TransferTx) {
+func (i *IntermediateNode) ConfirmDepositOnSource(txn types.CommittedTx) {
 	if txn.TxStatus != types.STATUS_OK {
 		fmt.Println("Error: Transaction failed on source chain")
 		return
 	}
 
 	// See if the destination address is one of our intermediate deposit addresses.
-	depositAddress := txn.Destination
+	depositAddress := txn.Tx.Destination
 	if destination, ok := i.DespositToDestination[depositAddress]; ok {
 		// Send a transaction to the destination chain.
 		i.DestinationChain.Transfer(
 			types.TransferTx{
 				Source:      ASSET_POOL,
 				Destination: destination,
-				Amount:      txn.Amount,
+				Amount:      txn.Tx.Amount,
 			},
 		)
-		fmt.Printf("Sending %d to destination address: %s\n", txn.Amount, destination)
+		fmt.Printf("Sending %d to destination address: %s\n", txn.Tx.Amount, destination)
 
 		// Also maintain the mapping between the source and deposit addresses.
-		i.SourceToDeposit[txn.Source] = depositAddress
-		i.DepositToSource[depositAddress] = txn.Source
+		i.SourceToDeposit[txn.Tx.Source] = depositAddress
+		i.DepositToSource[depositAddress] = txn.Tx.Source
 	}
 }
 
-func (i *IntermediateNode) ConfirmDepositOnDestination(txn types.TransferTx) {
+func (i *IntermediateNode) ConfirmDepositOnDestination(txn types.CommittedTx) {
 	if txn.TxStatus != types.STATUS_OK {
 		fmt.Println("Error: Transaction failed on destination chain")
 		// The transaction failed on the destination chain.
 		// Now we need to release the funds back to the source address.
-		depositAddress := i.DesinationToDeposit[txn.Destination]
+		depositAddress := i.DesinationToDeposit[txn.Tx.Destination]
 		sourceAddress := i.DepositToSource[depositAddress]
 
 		// Send a transaction back to the source chain.
@@ -85,10 +85,10 @@ func (i *IntermediateNode) ConfirmDepositOnDestination(txn types.TransferTx) {
 			types.TransferTx{
 				Source:      depositAddress,
 				Destination: sourceAddress,
-				Amount:      txn.Amount,
+				Amount:      txn.Tx.Amount,
 			},
 		)
-		fmt.Printf("Releasing %d back to source address: %s\n", txn.Amount, txn.Source)
+		fmt.Printf("Releasing %d back to source address: %s\n", txn.Tx.Amount, sourceAddress)
 		// TODO: do a little bit of clean up here.
 	} else {
 		fmt.Println("Transaction succeeded on destination chain")
