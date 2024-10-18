@@ -29,6 +29,8 @@ func (n *Node) GenerateDepositAddress(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error generating deposit address", http.StatusInternalServerError)
 		return
 	}
+
+	// Encode the public key into Solana's base58 address format
 	addr := base58.Encode(newKey.PublicKey)
 
 	// Launch a goroutine to listen to balance updates.
@@ -37,8 +39,6 @@ func (n *Node) GenerateDepositAddress(w http.ResponseWriter, r *http.Request) {
 		//
 		// TODO: in production, we need to properly handle timeouts, e.g. need to deal
 		// with the case where user deposits to the address after timeout.
-
-		// Encode the public key into Solana's base58 address format
 		n.Subscribe(context.Background(), destination, addr)
 	}()
 

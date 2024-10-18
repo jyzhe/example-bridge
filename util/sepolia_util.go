@@ -15,6 +15,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// SpotSend sends a specified amount of SOL to a destination address.
+//
+// Note that this method does not mint / issue any new tokens (out of scope for this project)
+// but sends the existing tokens from a pre-funded account.
 func SpotSend(destination string, amount int) error {
 	// Connect directly to the Ethereum node (JSON-RPC)
 	client, err := ethclient.Dial(constants.ETH_NODE_URL)
